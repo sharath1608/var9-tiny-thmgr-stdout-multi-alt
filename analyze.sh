@@ -378,12 +378,8 @@ EOF
 
 echo "load response = $load_response"
 
-num_samples=40000000
-mandel_size=4000
-max_iter=4000
-num_intervals=40000000
-rt_size=2000
-pw_len=6
+input_var_names=(num_samples mandel_size max_iter num_intervals rt_size pw_len)
+input_var_values=(40000000 4000 4000 40000000 2000 6)
 
 # lib run
 for i in ${core[@]}
@@ -393,7 +389,7 @@ do
 {
   "repo": "$repo_name",
   "core": $i,
-  "argv": ["main", "$num_samples", "$mandel_size", "$max_iter", "$num_intervals", "$rt_size", "$pw_len", "$i"]
+  "argv": ["main", $(printf '"%s", ' "${input_var_values[@]}")"$i"]
 }
 EOF
 )
@@ -422,7 +418,7 @@ for i in ${core[@]}
 do
   # time using direct execution
   start=`date +%s.%N`;\
-  ./$algo $num_samples $mandel_size $max_iter $num_intervals $rt_size $pw_len $i;\
+  ./$algo ${input_var_values[@]} $i;\
   end=`date +%s.%N`;\
   time_parallel_slow+=(`printf '%.8f' $( echo "$end - $start" | bc -l )`);
 
@@ -443,7 +439,7 @@ count=1
 for i in ${core[@]}
 do
   # memory
-  heaptrack -o "$algo.$count" ./$algo $num_samples $mandel_size $max_iter $num_intervals $rt_size $pw_len $i;\
+  heaptrack -o "$algo.$count" ./$algo ${input_var_values[@]} $i;\
   space_parallel+=(`heaptrack --analyze "$algo.$count.zst"  | grep "peak heap memory consumption" | awk '{print $5}'`);
   count=$((count+1))
 
@@ -551,7 +547,7 @@ done
 # Generate CSV files for fit.py
 # time-serial.csv
 #echo "$iva_name,size,time" > time-serial.csv
-echo "num_samples,mandel_size,max_iter,num_intervals,rt_size,pw_len,time" > time-serial.csv
+echo "$(IFS=,; echo "${input_var_names[*]}"),time" > time-serial.csv
 for i in "${!iva_arr[@]}"; do
   # Extract all columns from the row for multivariate fitting
   echo "${iva_arr[$i]},${time_serial[$i]}" >> time-serial.csv
@@ -574,7 +570,7 @@ for i in "${!core[@]}"; do
 done
 
 # space-serial.csv
-echo "num_samples,mandel_size,max_iter,num_intervals,rt_size,pw_len,memory" > space-serial.csv
+echo "$(IFS=,; echo "${input_var_names[*]}"),memory" > space-serial.csv
 for i in "${!iva_arr[@]}"; do
   # Extract all columns from the row for multivariate fitting
   echo "${iva_arr[$i]},${space_serial[$i]}" >> space-serial.csv
@@ -591,7 +587,7 @@ for i in "${!core[@]}"; do
 done
 
 # power-serial.csv
-echo "num_samples,mandel_size,max_iter,num_intervals,rt_size,pw_len,power" > power-serial.csv
+echo "$(IFS=,; echo "${input_var_names[*]}"),power" > power-serial.csv
 for i in "${!iva_arr[@]}"; do
   # Extract all columns from the row for multivariate fitting
   echo "${iva_arr[$i]},${power_serial[$i]}" >> power-serial.csv
@@ -608,7 +604,7 @@ for i in "${!core[@]}"; do
 done
 
 # energy-serial.csv
-echo "num_samples,mmandel_size,max_iter,num_intervals,rt_size,pw_len,energy" > energy-serial.csv
+echo "$(IFS=,; echo "${input_var_names[*]}"),energy" > energy-serial.csv
 for i in "${!iva_arr[@]}"; do
   # Extract all columns from the row for multivariate fitting
   echo "${iva_arr[$i]},${energy_serial[$i]}" >> energy-serial.csv
