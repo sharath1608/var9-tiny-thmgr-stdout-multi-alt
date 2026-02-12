@@ -115,7 +115,7 @@ rm -f $time_serial_analytics_file $time_parallel_analytics_file $time_parallel_s
 
 echo "cleanup done"
 
-{ read; readarray -t iva_arr; } < $iva_data_file
+{ IFS=, read -ra iva_arr_names; readarray -t iva_arr; } < $iva_data_file
 readarray -t core_arr < $core_count_file
 
 echo "read array files"
@@ -659,6 +659,18 @@ do
   call_fit $i.csv $i-fitted.json $progress $progress_bandwidth $fit_count $id $repo $repo_name "$start_time" $analysis_file
 done
 
+# Build iva JSON array from iva_arr and iva_arr_names
+iva_json_parts=()
+for col_idx in "${!iva_arr_names[@]}"; do
+  col_data=()
+  for line in "${iva_arr[@]}"; do
+    IFS=, read -ra cols <<< "$line"
+    col_data+=("${cols[$col_idx]}")
+  done
+  iva_json_parts+=("$(jo data="$(jo -a ${col_data[@]})" name="${iva_arr_names[$col_idx]}" unit=size)")
+done
+iva_json="$(jo -a "${iva_json_parts[@]}")"
+
 # time serial
 extn="${time_serial_analytics_file##*.}"
 noextn="${time_serial_analytics_file%.*}"
@@ -666,7 +678,7 @@ noextn="${time_serial_analytics_file%.*}"
 time_serial_analytics_file_d="$noextn"."$extn"
 
 jo -p \
-iva=$(jo data=$(jo -a ${iva_first[@]}) name=$iva_name unit=size) \
+iva="$iva_json" \
 measurements=$(jo data=$(jo -a ${time_serial[@]}) name=time unit=seconds) \
 fitted=$(jo data="`jq '.fitted' time-serial-fitted.json`" name=time unit=seconds) \
 unoptimized=$(jo data=$(jo -a) name=time unit=seconds) \
@@ -696,7 +708,7 @@ noextn="${space_serial_analytics_file%.*}"
 space_serial_analytics_file_d="$noextn"."$extn"
 
 jo -p \
-iva=$(jo data=$(jo -a ${iva_first[@]}) name=$iva_name unit=size) \
+iva="$iva_json" \
 measurements=$(jo data=$(jo -a ${space_serial[@]}) name=memory unit=MB) \
 unoptimized=$(jo data=$(jo -a) name=memory unit=MB) \
 fitted=$(jo data="`jq '.fitted' space-serial-fitted.json`" name=memory unit=MB) \
@@ -726,7 +738,7 @@ noextn="${power_serial_analytics_file%.*}"
 power_serial_analytics_file_d="$noextn"."$extn"
 
 jo -p \
-iva=$(jo data=$(jo -a ${iva_first[@]}) name=$iva_name unit=size) \
+iva="$iva_json" \
 measurements=$(jo data=$(jo -a ${power_serial[@]}) name=power unit="watts") \
 unoptimized=$(jo data=$(jo -a) name=power unit="watts") \
 fitted=$(jo data="`jq '.fitted' power-serial-fitted.json`" name=power unit="watts") \
@@ -756,7 +768,7 @@ noextn="${energy_serial_analytics_file%.*}"
 energy_serial_analytics_file_d="$noextn"."$extn"
 
 jo -p \
-iva=$(jo data=$(jo -a ${iva_first[@]}) name=$iva_name unit=size) \
+iva="$iva_json" \
 measurements=$(jo data=$(jo -a ${energy_serial[@]}) name=energy unit="watt-seconds") \
 unoptimized=$(jo data=$(jo -a) name=energy unit="watt-seconds") \
 fitted=$(jo data="`jq '.fitted' energy-serial-fitted.json`" name=energy unit="watt-seconds") \
