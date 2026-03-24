@@ -292,20 +292,20 @@ void brute_force_crack(int password_len) {
 
 int main(int argc, char *argv[]) {
 
-    if (argc < 7) {
-        printf("Usage: main_original <num_samples> <mandel_size> <max_iter> <num_intervals> <rt_size> <pw_len>\n");
+    if (argc < 6) {
+        printf("Usage: main_original <num_samples> <max_iter> <num_intervals> <rt_size> <pw_len>\n");
         return 1;
     }
 
     long num_samples    = atol(argv[1]);
-    int mandel_size     = atoi(argv[2]);
-    int max_iter        = atoi(argv[3]);
-    long num_intervals  = atol(argv[4]);
-    int rt_size         = atoi(argv[5]);
-    int pw_len          = atoi(argv[6]);
+//    int mandel_size     = atoi(argv[2]);
+    int max_iter        = atoi(argv[2]);
+    long num_intervals  = atol(argv[3]);
+    int rt_size         = atoi(argv[4]);
+    int pw_len          = atoi(argv[5]);
 
     monte_carlo_pi(num_samples);
-    mandelbrot(mandel_size, mandel_size, max_iter);
+//    mandelbrot(mandel_size, mandel_size, max_iter);
     numerical_integration(num_intervals, 0.0, 10.0);
     ray_trace(rt_size, rt_size);
     brute_force_crack(pw_len);
